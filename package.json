@@ -1,0 +1,54 @@
+{
+  "name": "dsh-pause-button",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "One composer button that pauses and resumes the running turn instead of stopping it.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MacilyDots/dsh-pause-button.git"
+  },
+  "homepage": "https://github.com/MacilyDots/dsh-pause-button#readme",
+  "bugs": {
+    "url": "https://github.com/MacilyDots/dsh-pause-button/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "pause",
+    "resume"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "rpc-channel.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ],
+      "external": [
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ]
+    }
+  }
+}
