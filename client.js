@@ -6,8 +6,10 @@
  * 空闲时不接管任何东西，原生发送按钮照常工作。
  */
 
-/** 长按多久算「立即中止」。 */
-const LONG_PRESS_MS = 500
+/** 长按多久算「立即中止」。太短会把正常点击误判成长按，1 秒留出手指余量。 */
+const LONG_PRESS_MS = 1000
+/** 长按过程中允许的指针位移，超过就算滑动而不是长按。 */
+const LONG_PRESS_SLOP = 8
 /** 状态轮询间隔。 */
 const POLL_MS = 500
 const CHANNEL = '/dsh-pause-button'
@@ -19,6 +21,7 @@ const CSS = `
 @media (hover:hover){.dshpb_primary:hover:not(:disabled){background:var(--dsw-alias-button-info-hover)}}
 .dshpb_primary:disabled{opacity:.4;cursor:default}
 .dshpb_row[data-armed="1"] .dshpb_primary{opacity:.55}
+.dshpb_row[data-pressing="1"] .dshpb_primary{transform:translateY(-2px) scale(.92)}
 `
 
 window.__ModuleLoader__.load({
@@ -139,7 +142,9 @@ window.__ModuleLoader__.load({
       if (hiderRef.current === null) hiderRef.current = createNativeHider()
       const pressTimer = useRef(undefined)
       const longPressed = useRef(false)
+      const startPoint = useRef(null)
       const inFlight = useRef(false)
+      const [pressing, setPressing] = useState(false)
 
       const refresh = useCallback(async () => {
         const value = await callRpc(rpc, 'status', { sessionId })
@@ -242,6 +247,7 @@ window.__ModuleLoader__.load({
           clearTimeout(pressTimer.current)
           pressTimer.current = undefined
         }
+        setPressing(false)
       }
 
       const onPointerDown = (event) => {
@@ -250,9 +256,12 @@ window.__ModuleLoader__.load({
         clearPress()
         // 只有运行中才可能「立即中止」；空闲态长按没有意义。
         if (mode !== 'pause' && mode !== 'cancel' && mode !== 'resume') return
+        startPoint.current = { x: event.clientX, y: event.clientY }
+        setPressing(true)
         pressTimer.current = setTimeout(() => {
           pressTimer.current = undefined
           longPressed.current = true
+          setPressing(false)
           if (inFlight.current) return
           inFlight.current = true
           void (async () => {
@@ -264,6 +273,16 @@ window.__ModuleLoader__.load({
             }
           })()
         }, LONG_PRESS_MS)
+      }
+
+      // 手指/鼠标滑开就取消长按，避免「按住拖一下」被当成中止。
+      const onPointerMove = (event) => {
+        if (pressTimer.current === undefined) return
+        const start = startPoint.current
+        if (start === null) return
+        if (Math.abs(event.clientX - start.x) > LONG_PRESS_SLOP || Math.abs(event.clientY - start.y) > LONG_PRESS_SLOP) {
+          clearPress()
+        }
       }
 
       const onClick = () => {
@@ -301,6 +320,7 @@ window.__ModuleLoader__.load({
         // 原生按钮在 onMouseDown 里阻止默认，点完按钮光标仍留在输入框。
         onMouseDown: keepEditorFocus,
         onPointerDown,
+        onPointerMove,
         onPointerUp: clearPress,
         onPointerLeave: clearPress,
         onPointerCancel: clearPress,
@@ -314,6 +334,7 @@ window.__ModuleLoader__.load({
         className: 'dshpb_row',
         'data-dsh-pause-button': '1',
         'data-armed': mode === 'cancel' ? '1' : undefined,
+        'data-pressing': pressing ? '1' : undefined,
       },
       Tooltip === null
         ? button
