@@ -1,6 +1,9 @@
 {
   "name": "dsh-pause-button",
   "version": "0.1.0",
+  "engines": {
+    "dsh": ">=0.2.2-rc.1 <0.3.0"
+  },
   "private": true,
   "type": "module",
   "description": "One composer button that pauses and resumes the running turn instead of stopping it.",
