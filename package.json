@@ -6,6 +6,9 @@
   },
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "node --test test/pause-button.test.mjs"
+  },
   "description": "One composer button that pauses and resumes the running turn instead of stopping it.",
   "license": "MIT",
   "repository": {

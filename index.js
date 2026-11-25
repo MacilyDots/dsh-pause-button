@@ -96,6 +96,23 @@ export function apply(ctx) {
     if (state.paused) releaseGate(state)
   })
 
+  ctx.on('agent/disposed', (payload) => {
+    const sid = payload?.agent?.id
+    if (!sid) return
+    const state = states.get(sid)
+    if (state) releaseGate(state)
+    states.delete(sid)
+    observed.delete(sid)
+  })
+
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => () => {
+      for (const state of states.values()) releaseGate(state)
+      states.clear()
+      observed.clear()
+    }, 'dsh-pause-button: cleanup')
+  }
+
   const handler = async (endpoint, payload, signal) => {
     try {
       const sessionId = payload?.sessionId
